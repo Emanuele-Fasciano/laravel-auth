@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+
+// importo i controller
+use App\Http\Controllers\Admin\HomeController as AdminHomeController;
+use App\Http\Controllers\Admin\ProjectController;
+use App\Http\Controllers\Guest\HomeController as GuestHomeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,18 +19,25 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [GuestHomeController::class, 'index']);
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/home', [AdminHomeController::class, 'index'])->middleware(['auth', 'verified'])->name('home');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+Route::middleware('auth')
+    ->prefix("/admin")
+    ->name("admin.")
+    ->group(function () {
+        Route::resource('projects', ProjectController::class);
+    });
 
-require __DIR__.'/auth.php';
+
+Route::middleware('auth')
+    ->prefix("profile") // * tutti gli url hanno il prefisso /profile
+    ->name("profile.")  // * tutte le rotte  hanno il prefisso profile
+    ->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+
+require __DIR__ . '/auth.php';
