@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ProjectController extends Controller
@@ -25,9 +27,9 @@ class ProjectController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(Project $project)
     {
-        return view('admin.projects.create');
+        return view('admin.projects.create', compact('project'));
     }
 
     /**
@@ -39,8 +41,21 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $data = $this->validation($request->all());
+
+        dd($data);
+
+        // controllo se l'utente ha inserito o meno un'file image
+        if (Arr::exists($data, 'image')) {
+
+            // se il file c'è lo metto nello storage e lo assegno a una variabile che sarà il path da mettere nel db
+            $path = Storage::put('uploads/project', $data['image']);
+        }
+
         $project = new Project;
         $project->fill($data);
+
+        // prima di salvare il project assegno a  $project->image il valore di $path per visualizzare l'immagine
+        $project->image = $path;
         $project->save();
         return to_route('admin.projects.show', $project);
     }
@@ -77,7 +92,24 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project)
     {
         $data = $this->validation($request->all(), $project->id);
-        $project->update($data);
+
+
+
+        // controllo se l'utente ha inserito o meno un'file image
+        if (Arr::exists($data, 'image')) {
+
+            // se c'è già un immagina la elimino per poi sostituirla con quella nuova
+            if ($project->image) Storage::delete($project->image);
+
+            // se il file c'è lo metto nello storage e lo assegno a una variabile che sarà il path da mettere nel db
+            $path = Storage::put('uploads/project', $data['image']);
+            // $data['image'] = $path;
+        }
+
+        $project->fill($data);
+        // prima di salvare il project assegno a  $project->image il valore di $path per visualizzare l'immagine
+        $project->image = $path;
+        $project->save();
         return to_route('admin.projects.show', $project);
     }
 
@@ -89,6 +121,8 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
+        // se c'è l'immagine, eliminala
+        if ($project->image) Storage::delete($project->image);
         $project->delete();
         return to_route('admin.projects.index');
     }
@@ -104,6 +138,7 @@ class ProjectController extends Controller
                 'programming_languages_used' => 'required',
                 'start_date' => 'required',
                 'end_date' => 'required',
+                'image' => 'nullable|image|mimes:jpg,jpeg,png',
             ],
             [
                 'name.required' => 'Il nome del progetto è obbligatorio',
@@ -111,6 +146,8 @@ class ProjectController extends Controller
                 'programming_languages_used.required' => "Scrivere i linguaggi utilizzati",
                 'start_date.required' => "Inserire la data di inizio progetto",
                 'end_date.required' => "Inserire la data di fine progetto",
+                'image.image' => "Il file inserito deve essere un'immagine",
+                'image.mimes' => "Il file deve essere nei seguenti formati:jpg,jpeg,png"
 
             ]
         )->validate();

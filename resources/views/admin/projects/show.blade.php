@@ -14,7 +14,9 @@
             <h6 class="card-subtitle mb-2 my-2"><strong> Data fine:</strong> {{ $project->end_date }}</h6>
             <h6><strong>Descrizione:</strong></h6>
             <p class="card-text">{{ $project->description }}</p>
+            <div class="col-3">
+                <img src="{{ $project->getImageUri() }}" alt="" class="img-fluid" id="img-preview">
+            </div>
         </div>
     </div>
-
 @endsection
