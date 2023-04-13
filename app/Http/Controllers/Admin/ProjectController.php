@@ -42,8 +42,6 @@ class ProjectController extends Controller
     {
         $data = $this->validation($request->all());
 
-        dd($data);
-
         // controllo se l'utente ha inserito o meno un'file image
         if (Arr::exists($data, 'image')) {
 
